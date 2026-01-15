@@ -9,7 +9,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
+        run: pip install --upgrade platformio esptool
       - name: Build all PlatformIO environments
         run: platformio run -e esp32-s3-supermini -e xiao_esp32c3 -e xiao_esp32s3
       - name: Generate factory binaries and manifests
