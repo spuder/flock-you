@@ -1,0 +1,62 @@
+name: PlatformIO CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+      - name: Build all PlatformIO environments
+        run: platformio run -e esp32-s3-supermini -e xiao_esp32c3 -e xiao_esp32s3
+      - name: Generate factory binaries and manifests
+        run: |
+          mkdir -p firmware
+          for env in esp32-s3-supermini xiao_esp32c3 xiao_esp32s3; do
+            # Merge binaries
+            python -m esptool --chip auto merge_bin \
+              -o firmware/${env}-factory.bin \
+              --flash_mode dio --flash_size 4MB \
+              0x1000 .pio/build/${env}/bootloader.bin \
+              0x8000 .pio/build/${env}/partitions.bin \
+              0x10000 .pio/build/${env}/firmware.bin
+            echo "Created firmware/${env}-factory.bin"
+            
+            # Determine chip family
+            if [[ $env == *"esp32c3"* ]]; then
+              chip="ESP32-C3"
+            else
+              chip="ESP32-S3"
+            fi
+            
+            # Generate manifest
+            cat > firmware/manifest_${env}.json << EOF
+          {
+            "name": "Flock You - ${env}",
+            "version": "1.0.0",
+            "new_install_prompt_erase": true,
+            "builds": [
+              {
+                "chipFamily": "${chip}",
+                "parts": [
+                  {
+                    "path": "${env}-factory.bin",
+                    "offset": 0
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+            echo "Created firmware/manifest_${env}.json"
+          done
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-binaries
+          path: |
+            firmware/*.bin
+            firmware/*.json
