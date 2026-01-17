@@ -17,7 +17,7 @@ factory:
 clean:
 	@echo "Cleaning build artifacts..."
 	platformio run -t clean
-	rm -rf firmware/
+	rm -rf firmware/*
 
 # Individual board targets
 xiao_esp32s3:
