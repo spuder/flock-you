@@ -6,7 +6,7 @@ all: build factory
 # Build all environments
 build:
 	@echo "Building all environments..."
-	platformio run -e esp32-s3-supermini -e xiao_esp32c3 -e xiao_esp32s3
+	platformio run -e esp32-s3-supermini -e xiao_esp32c3 -e xiao_esp32s3 -e t_dongle_s3
 
 # Generate factory binaries and manifests
 factory:
@@ -46,3 +46,4 @@ help:
 	@echo "  make xiao_esp32s3     - Build only xiao_esp32s3"
 	@echo "  make xiao_esp32c3     - Build only xiao_esp32c3"
 	@echo "  make esp32-s3-supermini - Build only esp32-s3-supermini"
+	@echo "  make t_dongle_s3      - Build only t_dongle_s3"

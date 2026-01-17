@@ -157,6 +157,10 @@
                     <img src="images/lilygo.jpg" alt="LilyGo T-Display S3"
                         style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto 0.5em;">
                     <div style="text-align:center;">LilyGo</div>
+                    <div style="text-align:center; margin:0.5em 0 1em 0; font-size:0.9em; color:#666;">
+                        <a href="https://amzn.to/45ZIyDw" target="_blank" rel="noopener noreferrer"
+                            style="color:#1976d2; text-decoration:underline;">Amazon</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -176,9 +180,9 @@
     <script>
         // Map board value to manifest file (using raw GitHub URLs)
         const manifestMap = {
-            'esp32s3-supermini': 'https://raw.githubusercontent.com/spuder/FlockYou/main/firmware/manifest_esp32-s3-supermini.json',
-            'oui-spy': 'https://raw.githubusercontent.com/spuder/FlockYou/main/firmware/manifest_xiao.json',
-            'lilygo-T-Dongle-S3': 'https://raw.githubusercontent.com/spuder/FlockYou/main/firmware/manifest_t_dongle_s3.json'
+            'esp32s3-supermini': 'https://raw.githubusercontent.com/spuder/flock-you/refs/heads/web/firmware/manifest_esp32-s3-supermini.json',
+            'oui-spy': 'https://raw.githubusercontent.com/spuder/flock-you/refs/heads/web/firmware/manifest_xiao.json',
+            'lilygo-T-Dongle-S3': 'https://raw.githubusercontent.com/spuder/flock-you/refs/heads/web/firmware/manifest_t_dongle_s3.json'
         };
         const flashBtn = document.getElementById('esp-flash');
         // Select all board options, including kit
