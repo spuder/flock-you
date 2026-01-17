@@ -1,0 +1,25 @@
+{
+  "name": "Flock You - XIAO Boards",
+  "version": "1.0.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "xiao_esp32s3-factory.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "xiao_esp32c3-factory.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

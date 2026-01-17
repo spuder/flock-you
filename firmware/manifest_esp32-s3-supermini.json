@@ -1,0 +1,16 @@
+{
+  "name": "Flock You - esp32-s3-supermini",
+  "version": "1.0.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "esp32-s3-supermini-factory.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

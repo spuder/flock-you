@@ -10,11 +10,13 @@ fi
 
 mkdir -p firmware
 
+# Get platformio config to extract flash settings
+config_json=$(pio project config --json-output)
+
 for env in esp32-s3-supermini xiao_esp32c3 xiao_esp32s3 t_dongle_s3; do
   echo "Processing $env..."
   
-  # Extract all information from the compiled bootloader binary
-  # This is more reliable than platformio.ini since it reflects what was actually compiled
+  # Extract chip info from the compiled bootloader binary
   bootloader_info=$(esptool.py image-info .pio/build/${env}/bootloader.bin 2>/dev/null)
   
   if [[ -z "$bootloader_info" ]]; then
@@ -23,38 +25,46 @@ for env in esp32-s3-supermini xiao_esp32c3 xiao_esp32s3 t_dongle_s3; do
     exit 1
   fi
   
-  # Extract chip type (e.g., "ESP32-S3")
+  # Extract chip type from bootloader (e.g., "ESP32-S3")
   chip_family=$(echo "$bootloader_info" | grep "Chip ID:" | sed -n 's/.*(\(ESP32[^)]*\)).*/\1/p')
   
   # Convert to lowercase for esptool chip parameter (ESP32-S3 -> esp32s3)
   chip=$(echo "$chip_family" | tr '[:upper:]' '[:lower:]' | tr -d '-')
   
-  # Extract flash settings from the binary
-  flash_size=$(echo "$bootloader_info" | grep "Flash size:" | awk '{print $3}')
-  flash_mode=$(echo "$bootloader_info" | grep "Flash mode:" | awk '{print tolower($3)}')
+  # Get flash settings from platformio.ini config (NOT from bootloader)
+  # The bootloader uses board defaults, but we want the configured overrides
+  env_config=$(echo "$config_json" | jq -r ".[] | select(.[0] == \"env:$env\") | .[1]")
+  
+  flash_size=$(echo "$env_config" | jq -r '.[] | select(.[0] == "board_build.flash_size") | .[1] // empty')
+  if [[ -z "$flash_size" ]]; then
+    flash_size=$(echo "$env_config" | jq -r '.[] | select(.[0] == "board_upload.flash_size") | .[1] // empty')
+  fi
+  
+  flash_mode=$(echo "$env_config" | jq -r '.[] | select(.[0] == "board_build.flash_mode") | .[1] // empty')
+  
+  # Fall back to bootloader values if not in config
+  if [[ -z "$flash_size" ]]; then
+    flash_size=$(echo "$bootloader_info" | grep "Flash size:" | awk '{print $3}')
+  fi
+  
+  if [[ -z "$flash_mode" ]]; then
+    flash_mode=$(echo "$bootloader_info" | grep "Flash mode:" | awk '{print tolower($3)}')
+  fi
 
   echo "Chip: $chip, Flash Size: $flash_size, Flash Mode: $flash_mode, Chip Family: $chip_family"
   
   # Validate that we got all required values
   if [[ -z "$chip" || -z "$chip_family" || -z "$flash_size" || -z "$flash_mode" ]]; then
-    echo "Error: Could not extract all required information from bootloader"
+    echo "Error: Could not extract all required information"
     echo "  chip=$chip, chip_family=$chip_family, flash_size=$flash_size, flash_mode=$flash_mode"
     exit 1
   fi
   
-  # Validate required values
-  if [[ -z "$flash_size" ]]; then
-    echo "Error: board_build.flash_size not found for environment $env"
-    exit 1
-  fi
-  
   # Merge binaries
-  esptool.py --chip $chip merge-bin \
+  esptool --chip $chip merge-bin \
     --output firmware/${env}-factory.bin \
-    --flash-mode $flash_mode --flash-size $flash_size \
     0x0 .pio/build/${env}/bootloader.bin \
     0x8000 .pio/build/${env}/partitions.bin \
-    0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin \
     0x10000 .pio/build/${env}/firmware.bin
   echo "Created firmware/${env}-factory.bin"
   
