@@ -32,6 +32,10 @@ esp32-s3-supermini:
 	@echo "Building esp32-s3-supermini..."
 	platformio run -e esp32-s3-supermini
 
+t_dongle_s3:
+	@echo "Building t_dongle_s3..."
+	platformio run -e t_dongle_s3
+
 # Help target
 help:
 	@echo "Available targets:"

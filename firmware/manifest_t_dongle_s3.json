@@ -1,0 +1,16 @@
+{
+  "name": "Flock You - t_dongle_s3",
+  "version": "1.0.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "t_dongle_s3-factory.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

@@ -11,7 +11,7 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio esptool
       - name: Build all PlatformIO environments
-        run: platformio run -e esp32-s3-supermini -e xiao_esp32c3 -e xiao_esp32s3
+        run: platformio run -e esp32-s3-supermini -e xiao_esp32c3 -e xiao_esp32s3 -e t_dongle_s3
       - name: Generate factory binaries and manifests
         run: bash scripts/generate_factory.sh
       - name: Upload firmware artifacts
