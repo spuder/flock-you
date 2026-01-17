@@ -11,12 +11,23 @@
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
 
+// T-Dongle S3 specific includes
+#ifdef BOARD_T_DONGLE_S3
+#include "display.h"
+#include "rgb_led.h"
+#endif
+
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
 // Hardware Configuration
+#ifdef BOARD_T_DONGLE_S3
+#define DEVICE_NAME "T-Dongle S3"
+#else
 #define BUZZER_PIN 3  // GPIO3 (D2) - PWM capable pin on Xiao ESP32 S3
+#define DEVICE_NAME "Xiao ESP32"
+#endif
 
 // Audio Configuration
 #define LOW_FREQ 200      // Boot sequence - low pitch
@@ -141,31 +152,42 @@ static NimBLEScan* pBLEScan;
 // AUDIO SYSTEM
 // ============================================================================
 
+#ifndef BOARD_T_DONGLE_S3
+// Buzzer functions for Xiao boards
 void beep(int frequency, int duration_ms)
 {
     tone(BUZZER_PIN, frequency, duration_ms);
     delay(duration_ms + 50);
 }
+#endif
 
 void boot_beep_sequence()
 {
-    printf("Initializing audio system...\n");
+    printf("Initializing audio/visual system...\n");
+#ifdef BOARD_T_DONGLE_S3
+    rgb_boot_sequence();
+#else
     printf("Playing boot sequence: Low -> High pitch\n");
     beep(LOW_FREQ, BOOT_BEEP_DURATION);
     beep(HIGH_FREQ, BOOT_BEEP_DURATION);
-    printf("Audio system ready\n\n");
+#endif
+    printf("Audio/visual system ready\n\n");
 }
 
 void flock_detected_beep_sequence()
 {
     printf("FLOCK SAFETY DEVICE DETECTED!\n");
+#ifdef BOARD_T_DONGLE_S3
+    rgb_detection_flash();
+#else
     printf("Playing alert sequence: 3 fast high-pitch beeps\n");
     for (int i = 0; i < 3; i++) {
         beep(DETECT_FREQ, DETECT_BEEP_DURATION);
         if (i < 2) delay(50); // Short gap between beeps
     }
+#endif
     printf("Detection complete - device identified!\n\n");
-    
+
     // Mark device as in range and start heartbeat tracking
     device_in_range = true;
     last_detection_time = millis();
@@ -175,9 +197,14 @@ void flock_detected_beep_sequence()
 void heartbeat_pulse()
 {
     printf("Heartbeat: Device still in range\n");
+#ifdef BOARD_T_DONGLE_S3
+    rgb_heartbeat_pulse();
+    display_heartbeat();
+#else
     beep(HEARTBEAT_FREQ, HEARTBEAT_DURATION);
     delay(100);
     beep(HEARTBEAT_FREQ, HEARTBEAT_DURATION);
+#endif
 }
 
 // ============================================================================
@@ -252,6 +279,11 @@ void output_wifi_detection_json(const char* ssid, const uint8_t* mac, int rssi, 
     String json_output;
     serializeJson(doc, json_output);
     Serial.println(json_output);
+
+#ifdef BOARD_T_DONGLE_S3
+    // Update display with detection info
+    display_detection("WiFi", ssid, mac_str, doc["threat_score"]);
+#endif
 }
 
 void output_ble_detection_json(const char* mac, const char* name, int rssi, const char* detection_method)
@@ -333,10 +365,15 @@ void output_ble_detection_json(const char* mac, const char* name, int rssi, cons
         doc["primary_indicator"] = "DEVICE_NAME";
         doc["detection_reason"] = "Device name matches Flock Safety pattern";
     }
-    
+
     String json_output;
     serializeJson(doc, json_output);
     Serial.println(json_output);
+
+#ifdef BOARD_T_DONGLE_S3
+    // Update display with detection info
+    display_detection("BLE", name && strlen(name) > 0 ? name : "Unknown", mac, doc["threat_score"]);
+#endif
 }
 
 // ============================================================================
@@ -635,7 +672,12 @@ class AdvertisedDeviceCallbacks: public NimBLEAdvertisedDeviceCallbacks {
             // Output the detection
             serializeJson(doc, Serial);
             Serial.println();
-            
+
+#ifdef BOARD_T_DONGLE_S3
+            // Update display with Raven detection info
+            display_detection("RAVEN", name.empty() ? "Gunshot Detector" : name.c_str(), addrStr.c_str(), 100);
+#endif
+
             if (!triggered) {
                 triggered = true;
                 flock_detected_beep_sequence();
@@ -673,13 +715,22 @@ void setup()
 {
     Serial.begin(115200);
     delay(1000);
-    
-    // Initialize buzzer
+
+#ifdef BOARD_T_DONGLE_S3
+    // T-Dongle S3: Initialize display and RGB LED
+    display_init();
+    rgb_init();
+    display_boot_screen();
+#else
+    // Xiao: Initialize buzzer
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, LOW);
+#endif
+
     boot_beep_sequence();
-    
-    printf("Starting Flock Squawk Enhanced Detection System...\n\n");
+
+    printf("Starting Flock Squawk Enhanced Detection System...\n");
+    printf("Device: %s\n\n", DEVICE_NAME);
     
     // Initialize WiFi in promiscuous mode
     WiFi.mode(WIFI_STA);
@@ -708,38 +759,63 @@ void setup()
     last_channel_hop = millis();
 }
 
+// Track display update timing (T-Dongle S3 only)
+#ifdef BOARD_T_DONGLE_S3
+static unsigned long last_display_update = 0;
+#endif
+static bool ble_scanning = false;
+
 void loop()
 {
     // Handle channel hopping for WiFi promiscuous mode
     hop_channel();
-    
+
     // Handle heartbeat pulse if device is in range
     if (device_in_range) {
         unsigned long now = millis();
-        
+
         // Check if 10 seconds have passed since last heartbeat
         if (now - last_heartbeat >= 10000) {
             heartbeat_pulse();
             last_heartbeat = now;
         }
-        
+
         // Check if device has gone out of range (no detection for 30 seconds)
         if (now - last_detection_time >= 30000) {
             printf("Device out of range - stopping heartbeat\n");
             device_in_range = false;
             triggered = false; // Allow new detections
+#ifdef BOARD_T_DONGLE_S3
+            display_clear_detection();
+            rgb_off();
+#endif
         }
     }
-    
+
+    // BLE scanning
     if (millis() - last_ble_scan >= BLE_SCAN_INTERVAL && !pBLEScan->isScanning()) {
         printf("[BLE] scan...\n");
         pBLEScan->start(BLE_SCAN_DURATION, false);
         last_ble_scan = millis();
+        ble_scanning = true;
     }
-    
+
     if (pBLEScan->isScanning() == false && millis() - last_ble_scan > BLE_SCAN_DURATION * 1000) {
         pBLEScan->clearResults();
+        ble_scanning = false;
     }
-    
+
+#ifdef BOARD_T_DONGLE_S3
+    // Update display periodically (every 1 second when not in detection mode)
+    if (!device_in_range && millis() - last_display_update >= 1000) {
+        display_scanning(current_channel, ble_scanning);
+        last_display_update = millis();
+    }
+
+    // Update display and RGB LED animations
+    display_update();
+    rgb_update();
+#endif
+
     delay(100);
 }
