@@ -113,10 +113,36 @@
             text-align: center;
             margin-bottom: 1.5em;
         }
+
+        .github-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .github-link:hover {
+            opacity: 1;
+        }
+
+        .github-link img {
+            width: 40px;
+            height: 40px;
+        }
     </style>
 </head>
 
 <body>
+    <a href="https://github.com/spuder/flock-you" target="_blank" rel="noopener noreferrer" class="github-link"
+        aria-label="View source on GitHub">
+        <img src="https://cdn.jsdelivr.net/npm/@mdi/svg@7.4.47/svg/github.svg" alt="GitHub" />
+    </a>
+    <a href="https://deflock.me" target="_blank" rel="noopener noreferrer" class="github-link" style="top: 70px;"
+        aria-label="Visit Deflock.me">
+        <img src="https://cdn.jsdelivr.net/npm/@mdi/svg@7.4.47/svg/cctv.svg" alt="Deflock.me" />
+    </a>
     <div>
         <div class="wave"></div>
         <div class="wave"></div>
@@ -146,12 +172,6 @@
             <div style="text-align:center; font-size:1.2em; color:#1976d2; font-weight:bold; margin-bottom:0.5em;">DIY
             </div>
             <div id="board-images" style="display: flex; flex-wrap: wrap; gap: 1em; justify-content: center;">
-                <div class="board-option" data-board="esp32s3-supermini" tabindex="0"
-                    style="cursor:pointer; border: 2px solid #ccc; border-radius: 8px; padding: 0.5em; background: #fafafa; transition: border 0.2s;">
-                    <img src="images/s3supermini.jpg" alt="ESP32S3 SuperMini"
-                        style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto 0.5em;">
-                    <div style="text-align:center;">ESP32S3 SuperMini</div>
-                </div>
                 <div class="board-option" data-board="lilygo-T-Dongle-S3" tabindex="0"
                     style="cursor:pointer; border: 2px solid #ccc; border-radius: 8px; padding: 0.5em; background: #fafafa; transition: border 0.2s;">
                     <img src="images/lilygo.jpg" alt="LilyGo T-Display S3"
@@ -162,15 +182,18 @@
                             style="color:#1976d2; text-decoration:underline;">Amazon</a>
                     </div>
                 </div>
+                <div class="board-option" data-board="esp32s3-supermini" tabindex="0"
+                    style="cursor:pointer; border: 2px solid #ccc; border-radius: 8px; padding: 0.5em; background: #fafafa; transition: border 0.2s;">
+                    <img src="images/s3supermini.jpg" alt="ESP32S3 SuperMini"
+                        style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto 0.5em;">
+                    <div style="text-align:center;">ESP32S3 SuperMini</div>
+                </div>
+
             </div>
         </div>
         <esp-web-install-button id="esp-flash" manifest="hardware/output/manifest-zero.json"></esp-web-install-button>
     </div>
 
-    <div style="text-align:center; margin:2em auto 1em auto; font-size:1.1em; color:#555; font-style:italic;">
-        From the same people who brought you <a href="https://github.com/spuder/openspool" target="_blank"
-            rel="noopener noreferrer" style="font-weight:bold; color:#1976d2; text-decoration:underline;">OpenSpool</a>
-    </div>
     <div style="text-align:center; margin:1em auto 2em auto;">
         <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
             data-name="bmc-button" data-slug="openspool" data-color="#FFDD00" data-emoji="☕" data-font="Cookie"
